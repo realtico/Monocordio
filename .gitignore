@@ -1,0 +1,14 @@
+# Compiled Binaries and Objects
+build/
+*.o
+*.so
+
+# Editor Settings
+.vscode/settings.json
+.vscode/*.launch
+.vscode/extensions.json
+.DS_Store
+
+# Temporary files
+*.swp
+*~

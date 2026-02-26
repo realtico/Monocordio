@@ -1,0 +1,125 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Zum (Exemplo)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/zum",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "build"
+        },
+        {
+            "name": "Debug Pling (ADSR)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/pling",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "build"
+        },
+        {
+            "name": "Debug Tsc-Tsc (Noise)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/tsc-tsc",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "build"
+        },
+        {
+            "name": "Debug Kapow (Battle)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/kapow",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "build"
+        },
+        {
+            "name": "Debug Pitiu (Laser)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/pitiu",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "build"
+        },
+        {
+            "name": "Debug Samsung (MML)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/samsung",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "build"
+        }
+    ]
+}
