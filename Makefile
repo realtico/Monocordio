@@ -15,8 +15,8 @@ LIB_DIR = $(BUILD_DIR)/lib
 BIN_DIR = $(BUILD_DIR)/bin
 
 # Arquivos da Lib
-LIB_SRC = $(SRC_DIR)/monocordio.c
-LIB_OBJ = $(OBJ_DIR)/monocordio.o
+LIB_SRC = $(SRC_DIR)/monocordio.c $(SRC_DIR)/mc_presets.c
+LIB_OBJ = $(OBJ_DIR)/monocordio.o $(OBJ_DIR)/mc_presets.o
 LIB_SO = $(LIB_DIR)/libmonocordio.so
 
 # Targets Finais
@@ -26,19 +26,18 @@ TSC = $(BIN_DIR)/tsc-tsc
 KAPOW = $(BIN_DIR)/kapow
 PITIU = $(BIN_DIR)/pitiu
 SAMSUNG = $(BIN_DIR)/samsung
+ORCHESTRA = $(BIN_DIR)/orchestra
 
-# Setup LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=$(LIB_DIR):$LD_LIBRARY_PATH
+.PHONY: all clean install uninstall directories run_zum run_pling run_tsc run_kapow run_pitiu run_samsung run_orchestra
 
-.PHONY: all clean install uninstall directories run_zum run_pling run_tsc run_kapow run_pitiu run_samsung
-
-all: directories $(LIB_SO) $(ZUM) $(PLING) $(TSC) $(KAPOW) $(PITIU) $(SAMSUNG)
+all: directories $(LIB_SO) $(ZUM) $(PLING) $(TSC) $(KAPOW) $(PITIU) $(SAMSUNG) $(ORCHESTRA)
 
 directories:
 	@mkdir -p $(OBJ_DIR) $(LIB_DIR) $(BIN_DIR)
 
 # Compila o objeto da biblioteca (-fPIC via CFLAGS)
-$(LIB_OBJ): $(LIB_SRC)
+# Regra genérica para .c -> .o em build/obj
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
@@ -49,10 +48,6 @@ $(LIB_SO): $(LIB_OBJ)
 	@echo "Biblioteca dinâmica gerada em: $@"
 
 # Compila os exemplos (agora linkando dinamicamente com -lmonocordio)
-# O compilador precisa saber onde achar o header (-I já está em CFLAGS) e a lib (-L + -l)
-# Também precisamos do rpath ou LD_LIBRARY_PATH na execução. 
-# Vou usar -L$(LIB_DIR) -lmonocordio.
-
 $(ZUM): $(EXAMPLES_DIR)/zum.c $(LIB_SO)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $< -o $@ -L$(LIB_DIR) -lmonocordio $(LIBS)
@@ -77,7 +72,11 @@ $(SAMSUNG): $(EXAMPLES_DIR)/samsung.c $(LIB_SO)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $< -o $@ -L$(LIB_DIR) -lmonocordio $(LIBS)
 
-# Limpeza deve remover tudo de build
+$(ORCHESTRA): $(EXAMPLES_DIR)/orchestra.c $(LIB_SO)
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $< -o $@ -L$(LIB_DIR) -lmonocordio $(LIBS)
+
+# Limpeza
 clean:
 	rm -rf $(BUILD_DIR)
 
@@ -100,16 +99,21 @@ run_pitiu: $(PITIU)
 run_samsung: $(SAMSUNG)
 	LD_LIBRARY_PATH=$(LIB_DIR) ./$(SAMSUNG)
 
+run_orchestra: $(ORCHESTRA)
+	LD_LIBRARY_PATH=$(LIB_DIR) ./$(ORCHESTRA)
+
 # Instalação no sistema
 install: $(LIB_SO)
 	@echo "Instalando Monocordio..."
 	@sudo cp $(LIB_SO) /usr/local/lib/
 	@sudo cp $(INC_DIR)/monocordio.h /usr/local/include/
+	@sudo cp $(INC_DIR)/mc_presets.h /usr/local/include/
 	@sudo ldconfig
 	@echo "Instalação concluída!"
 
 uninstall:
 	@sudo rm -f /usr/local/lib/libmonocordio.so
 	@sudo rm -f /usr/local/include/monocordio.h
+	@sudo rm -f /usr/local/include/mc_presets.h
 	@sudo ldconfig
 	@echo "Monocordio removido."
