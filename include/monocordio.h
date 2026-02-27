@@ -38,29 +38,13 @@ typedef struct {
     MC_VFO vfo;
     float total_duration;
     float duty_cycle; // Relevante para SQUARE
+    float vibrato_depth; // Amplitude do Vibrato (Hz)
+    float vibrato_rate;  // Frequência do Vibrato (Hz)
+    float volume;     // Novo: Controle de ganho por patch (mastering)
 } MC_Patch;
 
-/* Estado Dinâmico do Canal */
-typedef struct {
-    bool active;
-    double phase;
-    float current_amplitude;
-    uint8_t adsr_stage; // 0:IDLE, 1:ATTACK, 2:DECAY, 3:SUSTAIN, 4:RELEASE
-    float stage_timer;
-    float frequency;     // Stores the played frequency
-    const MC_Patch* patch;
-    uint32_t lfsr_reg;  // Estado para o ruído
-    float vfo_timer;    // Timer independente para VFO
-
-    /* Estado do Sequenciador MML */
-    const char* mml_cursor; // Ponteiro atual na string MML
-    const char* mml_start;  // Inicio da string (para loops se precisar, ou debug)
-    uint32_t mml_wait_samples; // Contador de espera para a proxima nota
-    uint8_t mml_octave;     // Oitava atual (padrao 4)
-    uint16_t mml_tempo;     // BPM (padrao 120)
-    uint8_t mml_default_len;// Duracao padrao (padrao 4 = seminima)
-    bool mml_active;        // Se o sequenciador esta rodando
-} MC_Channel;
+/* Estado Dinâmico do Canal (Opaco) */
+typedef struct MC_Channel MC_Channel;
 
 /* API Principal */
 bool MC_Init(void);
@@ -69,5 +53,10 @@ void MC_Play(int channel_id, const MC_Patch* patch, float base_freq);
 void MC_PlayMML(int channel_id, const MC_Patch* patch, const char* mml_string);
 void MC_Stop(int channel_id);
 void MC_Wait(uint32_t ms);
+
+/* Controle e Qualidade (Novas Funções do Polux) */
+bool MC_IsPlaying(int channel_id);
+void MC_SetVolume(int channel_id, float vol);
+void MC_SetMasterVolume(float vol);
 
 #endif // MONOCORDIO_H

@@ -17,14 +17,17 @@ extern const MC_Patch MC_PATCH_TRUMPET;     // 06: Saw + Attack Pitch Bump
 extern const MC_Patch MC_PATCH_STRINGS;     // 07: Saw + Slow Attack
 extern const MC_Patch MC_PATCH_CLARINET;    // 08: Square (50%) + Reed Attack
 extern const MC_Patch MC_PATCH_PIZZICATO;   // 09: Triangle + Pluck
+extern const MC_Patch MC_PATCH_VIOLIN;      // 10: Sawtooth + Vibrato
 
 // --- Percussion ---
-extern const MC_Patch MC_PATCH_KICK;        // 10: Square + Sub Drop
-extern const MC_Patch MC_PATCH_SNARE;       // 11: Noise + Snap
-extern const MC_Patch MC_PATCH_HH_CLOSED;   // 12: Noise + Tick
-extern const MC_Patch MC_PATCH_HH_OPEN;     // 13: Noise + Sizzle
-extern const MC_Patch MC_PATCH_TOM;         // 14: Triangle + Pitch Drop
-extern const MC_Patch MC_PATCH_SPLASH;      // 15: Noise + Long Decay
+extern const MC_Patch MC_PATCH_KICK;        // 11: Square + Sub Drop
+extern const MC_Patch MC_PATCH_SNARE;       // 12: Noise + Snap
+extern const MC_Patch MC_PATCH_HH_CLOSED;   // 13: Noise + Tick
+extern const MC_Patch MC_PATCH_HH_OPEN;     // 14: Noise + Sizzle
+extern const MC_Patch MC_PATCH_TOM;         // 15: Triangle + Pitch Drop
+extern const MC_Patch MC_PATCH_SPLASH;      // 16: Noise + Long Decay
+extern const MC_Patch MC_PATCH_METAL_ATTACK;// 17: Square High + Short
+extern const MC_Patch MC_PATCH_NOISE_TAIL;  // 18: LFSR + Long Decay
 
 // --- SFX ---
 extern const MC_Patch MC_PATCH_EXPLOSION_BODY;  // 16a: Noise Rumble

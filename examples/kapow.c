@@ -19,7 +19,8 @@ int main(int argc, char* argv[]) {
         .duty_cycle = 0.5f,
         .total_duration = 2.0f,
         .adsr = { .attack = 0.0f, .decay = 1.0f, .sustain = 0.0f, .release = 0.0f },
-        .vfo = { 0 }
+        .vfo = { 0 },
+        .volume = 0.8f
     };
 
     // Camada 2: Corpo da Explosão (Impacto Grave)
@@ -28,7 +29,8 @@ int main(int argc, char* argv[]) {
         .duty_cycle = 0.5f,
         .total_duration = 0.5f,
         .adsr = { .attack = 0.0f, .decay = 0.2f, .sustain = 0.0f, .release = 0.0f },
-        .vfo = { 0 }
+        .vfo = { 0 },
+        .volume = 0.9f
     };
 
     // Alerta: Sirene Tática
@@ -37,7 +39,8 @@ int main(int argc, char* argv[]) {
         .duty_cycle = 0.5f,
         .total_duration = 3.0f,
         .adsr = { .attack = 0.1f, .decay = 0.0f, .sustain = 0.6f, .release = 0.5f },
-        .vfo = { 0 }
+        .vfo = { 0 },
+        .volume = 0.5f
     };
 
     printf("Combate Iniciado!\n");
@@ -50,7 +53,7 @@ int main(int argc, char* argv[]) {
 
     // Passo 2: A Explosão Definitiva (Canais 0 + 1)
     printf(">> IMPACTO! (Canal 0: Ruído + Canal 1: Sub-Grave 50Hz)\n");
-    MC_Play(0, &noise_layer, 0.0f); // Freq irrelevante para noise nesta implementação
+    MC_Play(0, &noise_layer, 220.0f); // Ruído sintonizado (220Hz dá um tom grave de textura)
     MC_Play(1, &body_layer, 50.0f);
 
     // Monitorar o decaimento

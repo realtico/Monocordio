@@ -27,10 +27,11 @@ KAPOW = $(BIN_DIR)/kapow
 PITIU = $(BIN_DIR)/pitiu
 SAMSUNG = $(BIN_DIR)/samsung
 ORCHESTRA = $(BIN_DIR)/orchestra
+METAL_VIOLIN = $(BIN_DIR)/metal_violin
 
 .PHONY: all clean install uninstall directories run_zum run_pling run_tsc run_kapow run_pitiu run_samsung run_orchestra
 
-all: directories $(LIB_SO) $(ZUM) $(PLING) $(TSC) $(KAPOW) $(PITIU) $(SAMSUNG) $(ORCHESTRA)
+all: directories $(LIB_SO) $(ZUM) $(PLING) $(TSC) $(KAPOW) $(PITIU) $(SAMSUNG) $(ORCHESTRA) $(METAL_VIOLIN)
 
 directories:
 	@mkdir -p $(OBJ_DIR) $(LIB_DIR) $(BIN_DIR)
@@ -101,6 +102,13 @@ run_samsung: $(SAMSUNG)
 
 run_orchestra: $(ORCHESTRA)
 	LD_LIBRARY_PATH=$(LIB_DIR) ./$(ORCHESTRA)
+
+run_metal_violin: $(METAL_VIOLIN)
+	LD_LIBRARY_PATH=$(LIB_DIR) ./$(METAL_VIOLIN)
+
+$(METAL_VIOLIN): $(EXAMPLES_DIR)/metal_violin.c $(LIB_SO)
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $< -o $@ -L$(LIB_DIR) -lmonocordio $(LIBS)
 
 # Instalação no sistema
 install: $(LIB_SO)

@@ -21,7 +21,8 @@ int main(int argc, char* argv[]) {
         .duty_cycle = 0.5f, // Irrelevante para ruído
         .total_duration = 2.0f, // Tempo suficiente para o decay
         .adsr = { .attack = 0.0f, .decay = 1.5f, .sustain = 0.0f, .release = 0.0f },
-        .vfo = { 0 }
+        .vfo = { 0 },
+        .volume = 0.8f
     };
 
     // Configuração do Patch "Hi-Hat" (Prato de Bateria)
@@ -32,7 +33,8 @@ int main(int argc, char* argv[]) {
         .duty_cycle = 0.5f,
         .total_duration = 0.2f,
         .adsr = { .attack = 0.0f, .decay = 0.05f, .sustain = 0.0f, .release = 0.0f },
-        .vfo = { 0 }
+        .vfo = { 0 },
+        .volume = 0.5f
     };
 
     printf("Teste 1: A Explosão (Canal 0)...\n");

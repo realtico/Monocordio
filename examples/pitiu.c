@@ -22,7 +22,8 @@ int main(int argc, char* argv[]) {
         .duty_cycle = 0.5f,
         .total_duration = 0.2f, // Slightly longer than decay to ensure silence
         .adsr = { .attack = 0.0f, .decay = 0.1f, .sustain = 0.0f, .release = 0.0f },
-        .vfo = { .start_offset_hz = 0.0f, .end_offset_hz = -600.0f, .duration = 0.1f }
+        .vfo = { .start_offset_hz = 0.0f, .end_offset_hz = -600.0f, .duration = 0.1f },
+        .volume = 0.6f
     };
 
     // Configuração do Patch "Laser Pesado" (Camada extra para polifonia)
@@ -31,7 +32,8 @@ int main(int argc, char* argv[]) {
         .duty_cycle = 0.5f,
         .total_duration = 0.3f,
         .adsr = { .attack = 0.0f, .decay = 0.2f, .sustain = 0.0f, .release = 0.0f },
-        .vfo = { .start_offset_hz = 0.0f, .end_offset_hz = -800.0f, .duration = 0.2f }
+        .vfo = { .start_offset_hz = 0.0f, .end_offset_hz = -800.0f, .duration = 0.2f },
+        .volume = 0.7f
     };
 
     printf("Teste de Disparo Unico...\n");
