@@ -46,10 +46,37 @@ typedef struct {
 /* Estado Dinâmico do Canal (Opaco) */
 typedef struct MC_Channel MC_Channel;
 
+/* Modos de Operação do Canal */
+typedef enum {
+    MC_MODE_INTERNAL, // Gerador de onda interno (8-bit)
+    MC_MODE_EXTERNAL  // MIDI Externo (FluidSynth)
+} MC_ChannelMode;
+
 /* API Principal */
 bool MC_Init(void);
 void MC_Cleanup(void);
 void MC_Play(int channel_id, const MC_Patch* patch, float base_freq);
+void MC_SetChannelMode(int channel_id, MC_ChannelMode mode);
+void MC_SendRawMidi(uint8_t status, uint8_t data1, uint8_t data2);
+void MC_SendSysEx(const uint8_t* data, int length); // Future Use
+
+/* MIDI Convenience API (Sprint 09) - Encapsulated Commands */
+void MC_MidiNoteOn(int channel, int note, int velocity);
+void MC_MidiNoteOff(int channel, int note);
+void MC_MidiProgramChange(int channel, int patch_number);
+void MC_MidiControlChange(int channel, int controller, int value);
+
+/* MIDI Helper Macros / Functions */
+void MC_MidiSetVolume(int channel, int volume); // CC 7
+void MC_MidiSetExpression(int channel, int exp); // CC 11
+void MC_MidiSetPan(int channel, int pan); // CC 10
+void MC_MidiSetModulation(int channel, int mod); // CC 1
+void MC_MidiSetReverb(int channel, int level); // CC 91
+void MC_MidiAllNotesOff(void); // Panic Button
+
+/* IPC / Player (Mundo 3b) */
+void MC_PlayMidiFile(const char* filename);
+
 void MC_PlayMML(int channel_id, const MC_Patch* patch, const char* mml_string);
 void MC_Stop(int channel_id);
 void MC_Wait(uint32_t ms);

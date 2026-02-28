@@ -26,15 +26,44 @@ Certifique-se de incluir o header no seu código:
 | :--- | :--- |
 | `bool MC_Init(void)` | Inicializa a SDL2 e o dispositivo de áudio. Retorna `true` se sucesso. |
 | `void MC_Cleanup(void)` | Encerra a SDL2 e libera recursos. Deve ser chamada ao fim do programa. |
-| `void MC_Wait(uint32_t ms)` | Pausa a thread principal por `ms` milissegundos. Útil para controlar o tempo entre disparos de som. |
+| `void MC_SetMasterVolume(float vol)` | Define o volume global de toda a mix. 0.0 a N (default 0.3). |
+| `void MC_SetVolume(int channel, float vol)` | Define o ganho individual do canal (0.0 a 2.0). |
+| `bool MC_IsPlaying(int channel)` | Retorna `true` se o canal estiver soando (ativo ou em release). |
 
-### Reprodução Sonora
+### Reprodução Sonora (Engine 8-Bit)
 
 | Função | Descrição |
 | :--- | :--- |
-| `void MC_Play(int channel, const MC_Patch* patch, float freq)` | Dispara um som **imediato** no canal especificado. <br>• `channel`: 0 a 7.<br>• `patch`: Ponteiro para a configuração do timbre.<br>• `freq`: Frequência base em Hz. |
+| `void MC_Play(int channel, const MC_Patch* patch, float freq)` | Dispara um som **imediato** no canal especificado. <br>• `channel`: 0 a 15.<br>• `patch`: Ponteiro para a configuração do timbre.<br>• `freq`: Frequência base em Hz. |
 | `void MC_Stop(int channel)` | Interrompe o som no canal. Se o Patch tiver release, ele entra na fase de Release; caso contrário, corta imediatamente. |
 | `void MC_PlayMML(int channel, const MC_Patch* patch, const char* mml)` | Inicia o **Sequenciador MML** no canal. O canal irá interpretar a string `mml` em tempo real, background. |
+
+---
+
+## 🎹 MIDI Bridge (Hybrid Engine) - Sprint 09
+
+O Monocordio agora possui integração completa com **FluidSynth**, permitindo sons sampleados profissionais mixados com a síntese 8-bit.
+
+### Modos de Canal (MC_ChannelMode)
+Cada canal pode operar em dois universos distintos:
+*   `MC_MODE_INTERNAL` (Padrão): O canal gera onda bruta (SQUARE, SAW, NOISE).
+*   `MC_MODE_EXTERNAL`: O canal envia comandos para o sintetizador MIDI (banco GM).
+
+```c
+MC_SetChannelMode(channel, MC_MODE_EXTERNAL);
+```
+
+### Comandos de Conveniência MIDI
+Use estas funções para controlar instrumentos reais no modo externo:
+
+| Função | Descrição |
+| :--- | :--- |
+| `MC_MidiNoteOn(ch, note, vel)` | Toca uma nota MIDI (0-127). |
+| `MC_MidiNoteOff(ch, note)` | Para uma nota MIDI. |
+| `MC_MidiProgramChange(ch, patch)` | Troca o instrumento do canal (0-127). Ex: 0=Piano, 29=Overdrive Guitar. |
+| `MC_MidiControlChange(ch, cc, val)` | Envia um Control Change genérico. |
+| `MC_MidiSetVolume(ch, vol)` | Helper para CC 7 (Volume do Instrumento). |
+| `MC_MidiAllNotesOff()` | Envia comando de silêncio para todos os canais (Panic). |
 
 ---
 

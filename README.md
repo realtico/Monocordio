@@ -7,9 +7,12 @@ O **Monocordio** é uma biblioteca de áudio minimalista projetada para trazer a
 ## 🚀 Começando
 
 ### Pré-requisitos
-O Monocordio depende apenas da **SDL2** para o output de áudio.
-*   **Linux (Debian/Ubuntu):** `sudo apt install libsdl2-dev`
-*   **Windows/Mac:** Instale o SDK do SDL2 e ajuste o Makefile se necessário.
+O Monocordio depende da **SDL2** para áudio e **FluidSynth** para MIDI.
+*   **Linux (Debian/Ubuntu):** 
+    ```bash
+    sudo apt install libsdl2-dev libfluidsynth-dev fluid-soundfont-gm
+    ```
+*   **Windows/Mac:** Instale SDKs apropriados.
 
 ### Compilação e Execução
 O projeto utiliza um `Makefile` robusto para gerenciar a compilação.
@@ -46,6 +49,7 @@ sudo make uninstall
     *   `make run_kapow` - **Batalha/Polifonia:** Teste de mixagem de múltiplos canais.
     *   `make run_pitiu` - **VFO (Laser):** Teste de slide de frequência (glissando).
     *   `make run_samsung` - **Sequenciador MML:** Melodia completa (Tema do Mario).
+    *   `make run_hybrid` - **Dual Engine (MIDI):** Demonstração da ponte entre 8-bits e FluidSynth (Sons reais).
 
 ---
 

@@ -1,7 +1,10 @@
 CC = gcc
 # Flags de compilação
-CFLAGS = -Wall -Wextra -g -I$(INC_DIR) -fPIC
-LIBS = -lSDL2 -lm
+FLUID_CFLAGS = $(shell pkg-config --cflags fluidsynth)
+FLUID_LIBS = $(shell pkg-config --libs fluidsynth)
+
+CFLAGS = -Wall -Wextra -g -I$(INC_DIR) -fPIC $(FLUID_CFLAGS)
+LIBS = -lSDL2 -lm $(FLUID_LIBS)
 
 # Diretórios Principais
 INC_DIR = include
@@ -15,8 +18,9 @@ LIB_DIR = $(BUILD_DIR)/lib
 BIN_DIR = $(BUILD_DIR)/bin
 
 # Arquivos da Lib
-LIB_SRC = $(SRC_DIR)/monocordio.c $(SRC_DIR)/mc_presets.c
-LIB_OBJ = $(OBJ_DIR)/monocordio.o $(OBJ_DIR)/mc_presets.o
+# Atualizada para suportar múltiplos arquivos .c na raiz src/
+LIB_SRCS = $(wildcard $(SRC_DIR)/*.c)
+LIB_OBJS = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(LIB_SRCS))
 LIB_SO = $(LIB_DIR)/libmonocordio.so
 
 # Targets Finais
@@ -29,23 +33,24 @@ SAMSUNG = $(BIN_DIR)/samsung
 ORCHESTRA = $(BIN_DIR)/orchestra
 METAL_VIOLIN = $(BIN_DIR)/metal_violin
 
-.PHONY: all clean install uninstall directories run_zum run_pling run_tsc run_kapow run_pitiu run_samsung run_orchestra
+HYBRID = $(BIN_DIR)/midi_hybrid
 
-all: directories $(LIB_SO) $(ZUM) $(PLING) $(TSC) $(KAPOW) $(PITIU) $(SAMSUNG) $(ORCHESTRA) $(METAL_VIOLIN)
+.PHONY: all clean install uninstall directories run_zum run_pling run_tsc run_kapow run_pitiu run_samsung run_orchestra run_metal_violin run_hybrid
+
+all: directories $(LIB_SO) $(ZUM) $(PLING) $(TSC) $(KAPOW) $(PITIU) $(SAMSUNG) $(ORCHESTRA) $(METAL_VIOLIN) $(HYBRID)
 
 directories:
 	@mkdir -p $(OBJ_DIR) $(LIB_DIR) $(BIN_DIR)
 
-# Compila o objeto da biblioteca (-fPIC via CFLAGS)
-# Regra genérica para .c -> .o em build/obj
+# Compila os objetos da biblioteca
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Linka a biblioteca dinâmica (-shared)
-$(LIB_SO): $(LIB_OBJ)
+$(LIB_SO): $(LIB_OBJS)
 	@mkdir -p $(dir $@)
-	$(CC) -shared -o $@ $(LIB_OBJ) $(LIBS)
+	$(CC) -shared -o $@ $(LIB_OBJS) $(LIBS)
 	@echo "Biblioteca dinâmica gerada em: $@"
 
 # Compila os exemplos (agora linkando dinamicamente com -lmonocordio)
@@ -106,7 +111,14 @@ run_orchestra: $(ORCHESTRA)
 run_metal_violin: $(METAL_VIOLIN)
 	LD_LIBRARY_PATH=$(LIB_DIR) ./$(METAL_VIOLIN)
 
+run_hybrid: $(HYBRID)
+	LD_LIBRARY_PATH=$(LIB_DIR) ./$(HYBRID)
+
 $(METAL_VIOLIN): $(EXAMPLES_DIR)/metal_violin.c $(LIB_SO)
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $< -o $@ -L$(LIB_DIR) -lmonocordio $(LIBS)
+
+$(HYBRID): $(EXAMPLES_DIR)/midi_hybrid.c $(LIB_SO)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $< -o $@ -L$(LIB_DIR) -lmonocordio $(LIBS)
 
