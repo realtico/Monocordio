@@ -1,11 +1,6 @@
 #include "mc_internal.h"
 #include <stdio.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/wait.h>
 #include <stdlib.h>
-#include <time.h>
 
 // ============================================================================
 // GLOBAL STATE (Defined in mc_core.c, declared extern in mc_internal.h)
@@ -13,6 +8,7 @@
 // Here we define the FluidSynth specific globals
 fluid_settings_t* fluid_settings = NULL;
 fluid_synth_t* fluid_synth = NULL;
+fluid_player_t* fluid_player = NULL;
 bool fluid_enabled = false;
 
 // ============================================================================
@@ -25,6 +21,10 @@ bool MC_Internal_InitFluidSynth(void) {
 
     // Force sample rate da engine interna
     fluid_settings_setnum(fluid_settings, "synth.sample-rate", MC_SAMPLE_RATE);
+    
+    // Configurar o player para usar o timer de samples (renderização do synth) ao invés do sistema.
+    // Isso evita dessincronização e engasgos quando chamamos o synth no callback da SDL.
+    fluid_settings_setstr(fluid_settings, "player.timing-source", "sample");
 
     fluid_synth = new_fluid_synth(fluid_settings);
     if (!fluid_synth) {
@@ -32,6 +32,9 @@ bool MC_Internal_InitFluidSynth(void) {
         return false;
     }
 
+    // Create Player
+    fluid_player = new_fluid_player(fluid_synth);
+    
     // Tentar carregar SoundFont padrão (Ordem de prioridade)
     const char* sf_paths[] = {
         "/usr/share/sounds/sf2/FluidR3_GM.sf2", // Melhor qualidade
@@ -52,8 +55,9 @@ bool MC_Internal_InitFluidSynth(void) {
     if (!loaded) {
          fprintf(stderr, "[Monocordio] ERRO CRÍTICO: Nenhum SoundFont (.sf2) encontrado em /usr/share/sounds/sf2/!\n");
     } else {
-        // Aumentar ganho para audibilidade clara (2.0f é um bom boost para competir com square waves)
-        fluid_synth_set_gain(fluid_synth, 2.0f);
+        // Gain interno do FluidSynth. 0.2 é o default nativo —
+        // valores maiores causam clipping DENTRO do synth em arquivos polifônicos.
+        fluid_synth_set_gain(fluid_synth, MC_FLUID_GAIN);
     }
     
     fluid_enabled = true;
@@ -61,6 +65,7 @@ bool MC_Internal_InitFluidSynth(void) {
 }
 
 void MC_Internal_CleanupFluidSynth(void) {
+    if (fluid_player) delete_fluid_player(fluid_player);
     if (fluid_synth) delete_fluid_synth(fluid_synth);
     if (fluid_settings) delete_fluid_settings(fluid_settings);
     fluid_enabled = false;
@@ -157,130 +162,46 @@ void MC_MidiSetReverb(int channel, int level) {
 }
 
 // ============================================================================
-// MIDI FILE PLAYER (Mundo 3b)
+// MIDI FILE PLAYER
 // ============================================================================
 
+void MC_StopMidiFile(void) {
+    if (fluid_player) {
+        fluid_player_stop(fluid_player);
+        // Note: fluid_player_join might block if not running in a thread or if stopped?
+        // fluid_player_stop ensures it stops processing.
+        // We can just leave it stopped.
+        // Or destroy it to reset playlist.
+        delete_fluid_player(fluid_player);
+        fluid_player = NULL;
+    }
+}
+
 void MC_PlayMidiFile(const char* filename) {
-    if (mc_ipc_active) {
-        // Kill previous player
-        kill(mc_player_pid, SIGTERM);
-        waitpid(mc_player_pid, NULL, 0);
-        close(mc_pipe_fd[0]);
-        mc_ipc_active = false;
+    if (!fluid_enabled || !fluid_synth) return;
+
+    // Stop previous playback
+    MC_StopMidiFile();
+
+    // Create new player
+    fluid_player = new_fluid_player(fluid_synth);
+    if (!fluid_player) {
+         fprintf(stderr, "[Monocordio] Failed to create fluid_player\n");
+         return;
     }
 
-    if (pipe(mc_pipe_fd) == -1) {
-        perror("pipe");
-        return;
-    }
-
-    // Set read end to non-blocking (CRITICAL for AudioCallback)
-    int flags = fcntl(mc_pipe_fd[0], F_GETFL, 0);
-    fcntl(mc_pipe_fd[0], F_SETFL, flags | O_NONBLOCK);
-
-    pid_t pid = fork();
-    if (pid == -1) {
-        perror("fork");
-        return;
-    }
-
-    if (pid == 0) {
-        // CHILD PROCESS (The Player)
-        close(mc_pipe_fd[0]); // Close read end of pipe
-
-        // Open MIDI file
-        FILE* f = fopen(filename, "rb");
-        if (!f) {
-            fprintf(stderr, "Child: Failed to open %s\n", filename);
-            _exit(1);
-        }
-
-        // --- Inline Macros (using _exit on error since we are in child) ---
-        uint8_t b4[4], b2[2], b1;
-        #define CHECK_READ(count) if(fread(b4,1,count,f)!=count) { fclose(f); _exit(1); }
-        #define READ_U32(val) { if(fread(b4,1,4,f)!=4) { fclose(f); _exit(1); } val = (b4[0]<<24)|(b4[1]<<16)|(b4[2]<<8)|b4[3]; }
-        #define READ_U16(val) { if(fread(b2,1,2,f)!=2) { fclose(f); _exit(1); } val = (b2[0]<<8)|b2[1]; }
-        #define READ_VAR(val) { val=0; while(1){ if(fread(&b1,1,1,f)!=1) { fclose(f); _exit(1); } val=(val<<7)|(b1&0x7F); if(!(b1&0x80)) break; } }
-
-        uint32_t chunk_type, chunk_len;
-        READ_U32(chunk_type);
-        READ_U32(chunk_len);
-
-        if (chunk_type != 0x4D546864) { // "MThd"
-             fprintf(stderr, "Child: Not a MIDI file\n");
-             fclose(f); _exit(1);
-        }
-        
-        uint16_t fmt, trks, div;
-        READ_U16(fmt); READ_U16(trks); READ_U16(div);
-        
-        int tracks_found = 0;
-        
-        while (tracks_found < trks) {
-             READ_U32(chunk_type);
-             READ_U32(chunk_len);
-             
-             if (chunk_type == 0x4D54726B) { // "MTrk"
-                 long start_pos = ftell(f);
-                 long end_pos = start_pos + chunk_len;
-                 
-                 uint8_t running_status = 0;
-                 uint32_t us_per_q = 500000; // 120 BPM default
-
-                 while (ftell(f) < end_pos) {
-                     uint32_t delta;
-                     READ_VAR(delta);
-                     
-                     if (delta > 0) {
-                         // Simple overflow protection
-                         uint64_t wait = (uint64_t)delta * us_per_q / div;
-                         if (wait > 2000000) wait = 2000000; 
-                         usleep(wait);
-                     }
-                     
-                     if (fread(&b1, 1, 1, f) != 1) break;
-                     
-                     if (b1 & 0x80) running_status = b1;
-                     else { fseek(f, -1, SEEK_CUR); b1 = running_status; }
-                     
-                     if (b1 == 0xFF) { // Meta
-                         uint8_t type; fread(&type, 1, 1, f);
-                         uint32_t len; READ_VAR(len);
-                         if (type == 0x51 && len == 3) {
-                              fread(b4, 1, 3, f); // Recycle b4
-                              us_per_q = (b4[0]<<16)|(b4[1]<<8)|b4[2];
-                         } else {
-                              fseek(f, len, SEEK_CUR);
-                         }
-                     } else if ((b1 & 0xF0) == 0xF0) { // Sysex
-                         uint32_t len; READ_VAR(len);
-                         fseek(f, len, SEEK_CUR);
-                     } else { // Channel Msg
-                         uint8_t cmd = b1 & 0xF0;
-                         uint8_t p1=0, p2=0;
-                         fread(&p1, 1, 1, f); 
-                         if (cmd != 0xC0 && cmd != 0xD0) fread(&p2, 1, 1, f);
-                         
-                         uint8_t msg[] = {b1, p1, p2};
-                         int to_write = (cmd==0xC0 || cmd==0xD0) ? 2 : 3;
-                         write(mc_pipe_fd[1], msg, to_write);
-                     }
-                 }
-                 break; 
-             } else {
-                 fseek(f, chunk_len, SEEK_CUR);
-             }
-             tracks_found++;
-        }
-        
-        fclose(f);
-        close(mc_pipe_fd[1]);
-        _exit(0);
-        
+    if (fluid_player_add(fluid_player, filename) == FLUID_OK) {
+        fluid_player_play(fluid_player);
     } else {
-        // PARENT
-        close(mc_pipe_fd[1]); // Close write end
-        mc_ipc_active = true;
-        mc_player_pid = pid;
+        fprintf(stderr, "[Monocordio] Failed to load MIDI file: %s\n", filename);
+        // Clean up
+        delete_fluid_player(fluid_player);
+        fluid_player = NULL;
     }
+}
+
+void MC_SendSysEx(const uint8_t* data, int length) {
+    // Stub: Optional SysEx support for later
+    (void)data;
+    (void)length;
 }

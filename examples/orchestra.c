@@ -30,9 +30,9 @@ int main() {
 
     // Definindo Patches
     // Canal 0: O icônico Órgão
-    MC_Play(0, &MC_PATCH_ORGAN, 0); 
+    // MC_Play(0, &MC_PATCH_ORGAN, 0); 
     // Canal 1: Baixo de suporte
-    MC_Play(1, &MC_PATCH_BASS, 0);
+    // MC_Play(1, &MC_PATCH_BASS, 0);
 
     // Frase 1: Taaaaaaan...
     printf("Phrase 1: The Phantom...\n");
@@ -44,7 +44,7 @@ int main() {
     
     // Kick e Crash
     MC_Play(2, &MC_PATCH_KICK, 60.0f);
-    MC_Play(3, &MC_PATCH_SPLASH, 0);
+    MC_Play(3, &MC_PATCH_SPLASH, 4400.0f);
     
     MC_Wait(800);
 
@@ -58,7 +58,7 @@ int main() {
 
     for(int i=0; i<4; i++) {
         MC_Play(0, &MC_PATCH_ORGAN, melody[i]);
-        MC_Play(2, &MC_PATCH_HH_CLOSED, 0); // Metronome click
+        MC_Play(2, &MC_PATCH_HH_CLOSED, 8000.0f); // Metronome click
         MC_Wait(250);
     }
     
@@ -72,7 +72,7 @@ int main() {
     printf("Phrase 2: Inside your mind...\n");
     
     MC_Play(0, &MC_PATCH_ORGAN, 293.66f); // D4
-    MC_Play(2, &MC_PATCH_SNARE, 0);
+    MC_Play(2, &MC_PATCH_SNARE, 5000.0f);
     MC_Wait(800);
 
     float melody2[] = {
@@ -84,7 +84,7 @@ int main() {
 
     for(int i=0; i<4; i++) {
         MC_Play(0, &MC_PATCH_ORGAN, melody2[i]);
-        MC_Play(2, &MC_PATCH_HH_OPEN, 0);
+        MC_Play(2, &MC_PATCH_HH_OPEN, 8000.0f);
         MC_Wait(250);
     }
 

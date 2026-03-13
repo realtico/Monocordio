@@ -18,7 +18,7 @@ Certifique-se de incluir o header no seu código:
 
 ---
 
-## 🛠️ API C (libs/monocordio/monocordio.h)
+## 🛠️ API C (include/monocordio.h)
 
 ### Controle do Sistema
 
@@ -34,7 +34,7 @@ Certifique-se de incluir o header no seu código:
 
 | Função | Descrição |
 | :--- | :--- |
-| `void MC_Play(int channel, const MC_Patch* patch, float freq)` | Dispara um som **imediato** no canal especificado. <br>• `channel`: 0 a 15.<br>• `patch`: Ponteiro para a configuração do timbre.<br>• `freq`: Frequência base em Hz. |
+| `void MC_Play(int channel, const MC_Patch* patch, float freq)` | Dispara um som **imediato** no canal especificado. <br>• `channel`: 0 a 7.<br>• `patch`: Ponteiro para a configuração do timbre.<br>• `freq`: Frequência base em Hz. |
 | `void MC_Stop(int channel)` | Interrompe o som no canal. Se o Patch tiver release, ele entra na fase de Release; caso contrário, corta imediatamente. |
 | `void MC_PlayMML(int channel, const MC_Patch* patch, const char* mml)` | Inicia o **Sequenciador MML** no canal. O canal irá interpretar a string `mml` em tempo real, background. |
 
@@ -92,6 +92,11 @@ Permite alterar a frequência durante a reprodução (Pitch Slide).
 *   `end_offset_hz`: Desvio de frequência no final.
 *   `duration`: Tempo para percorrer do início ao fim.
 
+### 4. LFO / Vibrato
+Permite modulação periódica da frequência.
+*   `vibrato_rate`: Velocidade do vibrato em Hz (ex: `5.0f`).
+*   `vibrato_depth`: Quantidade de modulação/desvio da frequência original (ex: `5.0f`).
+
 ---
 
 ## 🎼 Dicionário MML (Music Macro Language)
@@ -120,6 +125,6 @@ const char* escala = "T180 O4 C D E F G A B > C";
 ### Curiosidade Técnica: Conversão MML -> Hz
 O Monocordio converte as notas musicais para frequência utilizando a fórmula padrão da temperamento igual:
 
-$$f = 440 \cdot 2^{\frac{n-49}{12}}$$
+$$f = 440 \cdot 2^{\frac{n-69}{12}}$$
 
 Onde $n$ é o índice da nota MIDI (Sendo A4 = 69 = 440Hz). O parser calcula isso em tempo real dentro do loop de áudio para garantir precisão máxima de afinação.

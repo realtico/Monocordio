@@ -12,7 +12,6 @@ const MC_Patch MC_PATCH_PIANO = {
     .adsr = { .attack = 0.01f, .decay = 0.8f, .sustain = 0.0f, .release = 0.05f },
     .vfo = { .duration = 0 },
     .duty_cycle = 0.5f,
-    .total_duration = 0,
     .volume = 0.6f
 };
 
@@ -88,7 +87,7 @@ const MC_Patch MC_PATCH_VIOLIN = {
 
 // --- Percussion ---
 
-// 10: Kick - Sub Bass Drop
+// 11: Kick - Sub Bass Drop
 const MC_Patch MC_PATCH_KICK = {
     .wave = MC_WAVE_SQUARE, 
     .adsr = { .attack = 0.0f, .decay = 0.3f, .sustain = 0.0f, .release = 0.0f },
@@ -96,28 +95,28 @@ const MC_Patch MC_PATCH_KICK = {
     .volume = 0.9f
 };
 
-// 11: Snare - Noise Snap
+// 12: Snare - Noise Snap
 const MC_Patch MC_PATCH_SNARE = {
     .wave = MC_WAVE_NOISE_LFSR, 
     .adsr = { .attack = 0.0f, .decay = 0.25f, .sustain = 0.0f, .release = 0.05f },
     .volume = 0.7f
 };
 
-// 12: Hi-Hat Closed - Tiny tick
+// 13: Hi-Hat Closed - Tiny tick
 const MC_Patch MC_PATCH_HH_CLOSED = {
     .wave = MC_WAVE_NOISE_LFSR, 
     .adsr = { .attack = 0.0f, .decay = 0.05f, .sustain = 0.0f, .release = 0.02f },
     .volume = 0.4f
 };
 
-// 13: Hi-Hat Open - Sizzle
+// 14: Hi-Hat Open - Sizzle
 const MC_Patch MC_PATCH_HH_OPEN = {
     .wave = MC_WAVE_NOISE_LFSR, 
     .adsr = { .attack = 0.02f, .decay = 0.5f, .sustain = 0.0f, .release = 0.2f },
     .volume = 0.4f
 };
 
-// 14: Tom - Triangle drop
+// 15: Tom - Triangle drop
 const MC_Patch MC_PATCH_TOM = {
     .wave = MC_WAVE_TRIANGLE, 
     .adsr = { .attack = 0.0f, .decay = 0.4f, .sustain = 0.0f, .release = 0.1f },
@@ -125,7 +124,7 @@ const MC_Patch MC_PATCH_TOM = {
     .volume = 0.7f
 };
 
-// 15: Splash - Long Noise
+// 16: Splash - Long Noise
 const MC_Patch MC_PATCH_SPLASH = {
     .wave = MC_WAVE_NOISE_LFSR, 
     .adsr = { .attack = 0.05f, .decay = 1.5f, .sustain = 0.0f, .release = 1.0f },

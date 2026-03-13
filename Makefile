@@ -53,34 +53,37 @@ $(LIB_SO): $(LIB_OBJS)
 	$(CC) -shared -o $@ $(LIB_OBJS) $(LIBS)
 	@echo "Biblioteca dinâmica gerada em: $@"
 
-# Compila os exemplos (agora linkando dinamicamente com -lmonocordio)
+# Rpath para que binários sempre encontrem a .so local (build/lib/) antes do sistema
+LDFLAGS_RPATH = -Wl,-rpath,'$$ORIGIN/../lib'
+
+# Compila os exemplos (linkando dinamicamente com -lmonocordio + rpath)
 $(ZUM): $(EXAMPLES_DIR)/zum.c $(LIB_SO)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $< -o $@ -L$(LIB_DIR) -lmonocordio $(LIBS)
+	$(CC) $(CFLAGS) $< -o $@ -L$(LIB_DIR) $(LDFLAGS_RPATH) -lmonocordio $(LIBS)
 
 $(PLING): $(EXAMPLES_DIR)/pling.c $(LIB_SO)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $< -o $@ -L$(LIB_DIR) -lmonocordio $(LIBS)
+	$(CC) $(CFLAGS) $< -o $@ -L$(LIB_DIR) $(LDFLAGS_RPATH) -lmonocordio $(LIBS)
 
 $(TSC): $(EXAMPLES_DIR)/tsc-tsc.c $(LIB_SO)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $< -o $@ -L$(LIB_DIR) -lmonocordio $(LIBS)
+	$(CC) $(CFLAGS) $< -o $@ -L$(LIB_DIR) $(LDFLAGS_RPATH) -lmonocordio $(LIBS)
 
 $(KAPOW): $(EXAMPLES_DIR)/kapow.c $(LIB_SO)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $< -o $@ -L$(LIB_DIR) -lmonocordio $(LIBS)
+	$(CC) $(CFLAGS) $< -o $@ -L$(LIB_DIR) $(LDFLAGS_RPATH) -lmonocordio $(LIBS)
 
 $(PITIU): $(EXAMPLES_DIR)/pitiu.c $(LIB_SO)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $< -o $@ -L$(LIB_DIR) -lmonocordio $(LIBS)
+	$(CC) $(CFLAGS) $< -o $@ -L$(LIB_DIR) $(LDFLAGS_RPATH) -lmonocordio $(LIBS)
 
 $(SAMSUNG): $(EXAMPLES_DIR)/samsung.c $(LIB_SO)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $< -o $@ -L$(LIB_DIR) -lmonocordio $(LIBS)
+	$(CC) $(CFLAGS) $< -o $@ -L$(LIB_DIR) $(LDFLAGS_RPATH) -lmonocordio $(LIBS)
 
 $(ORCHESTRA): $(EXAMPLES_DIR)/orchestra.c $(LIB_SO)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $< -o $@ -L$(LIB_DIR) -lmonocordio $(LIBS)
+	$(CC) $(CFLAGS) $< -o $@ -L$(LIB_DIR) $(LDFLAGS_RPATH) -lmonocordio $(LIBS)
 
 # Limpeza
 clean:
@@ -116,11 +119,11 @@ run_hybrid: $(HYBRID)
 
 $(METAL_VIOLIN): $(EXAMPLES_DIR)/metal_violin.c $(LIB_SO)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $< -o $@ -L$(LIB_DIR) -lmonocordio $(LIBS)
+	$(CC) $(CFLAGS) $< -o $@ -L$(LIB_DIR) $(LDFLAGS_RPATH) -lmonocordio $(LIBS)
 
 $(HYBRID): $(EXAMPLES_DIR)/midi_hybrid.c $(LIB_SO)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $< -o $@ -L$(LIB_DIR) -lmonocordio $(LIBS)
+	$(CC) $(CFLAGS) $< -o $@ -L$(LIB_DIR) $(LDFLAGS_RPATH) -lmonocordio $(LIBS)
 
 # Instalação no sistema
 install: $(LIB_SO)

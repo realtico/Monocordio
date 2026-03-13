@@ -21,7 +21,6 @@ int main(int argc, char* argv[]) {
     MC_Patch pling_patch = {
         .wave = MC_WAVE_SINE, // Sine wave for a cleaner "bling" sound
         .duty_cycle = 0.5f,
-        .total_duration = 2.0f, // Max duration just in case
         .adsr = { .attack = 0.01f, .decay = 0.1f, .sustain = 0.3f, .release = 0.5f },
         .vfo = { 0 },
         .volume = 0.6f

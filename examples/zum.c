@@ -19,7 +19,6 @@ int main(int argc, char* argv[]) {
     MC_Patch square_wave_patch = {
         .wave = MC_WAVE_SQUARE,
         .duty_cycle = 0.5f,
-        .total_duration = 2.0f, // 2 Segundos de ZUM
         .adsr = { .attack = 0.1, .decay = 0.1, .sustain = 0.8, .release = 0.2 },
         .vfo = { 0 },
         .volume = 0.5f

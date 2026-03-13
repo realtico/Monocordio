@@ -18,6 +18,12 @@ static int parse_number(const char** cursor) {
     return num;
 }
 
+static float get_note_freq(int note_index, int octave) {
+    // MIDI note calculation
+    int midi_note = (octave + 1) * 12 + note_index;
+    return 440.0f * powf(2.0f, (midi_note - 69.0f) / 12.0f);
+}
+
 // ============================================================================
 // MML PROCESSOR
 // ============================================================================
@@ -86,7 +92,7 @@ void MC_Internal_ProcessMML(struct MC_Channel* channel) {
                 if (cmd != 'R') {
                     if (channel->mode == MC_MODE_INTERNAL) {
                          // World 1: 8-bit Synthesis
-                        float freq = MC_Internal_GetNoteFreq(note_idx, channel->mml_octave);
+                        float freq = get_note_freq(note_idx, channel->mml_octave);
                         channel->frequency = freq;
                         channel->phase = 0.0;
                         channel->stage_timer = 0.0f;

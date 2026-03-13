@@ -19,7 +19,6 @@ int main(int argc, char* argv[]) {
     MC_Patch explosion_patch = {
         .wave = MC_WAVE_NOISE_LFSR,
         .duty_cycle = 0.5f, // Irrelevante para ruído
-        .total_duration = 2.0f, // Tempo suficiente para o decay
         .adsr = { .attack = 0.0f, .decay = 1.5f, .sustain = 0.0f, .release = 0.0f },
         .vfo = { 0 },
         .volume = 0.8f
@@ -31,7 +30,6 @@ int main(int argc, char* argv[]) {
     MC_Patch hihat_patch = {
         .wave = MC_WAVE_NOISE_LFSR,
         .duty_cycle = 0.5f,
-        .total_duration = 0.2f,
         .adsr = { .attack = 0.0f, .decay = 0.05f, .sustain = 0.0f, .release = 0.0f },
         .vfo = { 0 },
         .volume = 0.5f

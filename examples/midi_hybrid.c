@@ -25,6 +25,7 @@ int main() {
     printf("Setting up channels...\n");
     // Channel 0: 8-bit Bass (World 1)
     MC_SetChannelMode(0, MC_MODE_INTERNAL); 
+    MC_SetVolume(0, 0.2f); // Diminuindo o grave especificamente para equilibrar a mix
 
     // Channel 1: MIDI Piano (World 2)
     MC_SetChannelMode(1, MC_MODE_EXTERNAL);

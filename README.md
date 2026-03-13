@@ -67,20 +67,30 @@ A arquitetura foi desenhada para desacoplar o Core da Aplicação.
 │   ├── tsc-tsc.c     # Teste de Ruído (Hi-hats e Explosões)
 │   ├── kapow.c       # Teste de Mixagem (Cenário de Batalha)
 │   ├── pitiu.c       # Teste de VFO (Lasers e Slides)
-│   └── samsung.c     # Teste de MML (Música e Sequenciador)
-├── libs/
-│   └── monocordio/   # O CORE (A "Alma" do projeto)
-│       ├── monocordio.h  # Contrato de Dados (API Pública)
-│       └── monocordio.c  # Implementação da Síntese e Mixer
-└── Makefile          # Automação de Build
+│   ├── samsung.c     # Teste de MML (Música e Sequenciador)
+│   ├── orchestra.c   # Demonstração de polifonia complexa e percussão
+│   ├── metal_violin.c# Teste de Vibrato (LFO) e camadas percussivas
+│   └── midi_hybrid.c # Teste de Bridge (8-bits + FluidSynth MIDI)
+├── src/              # O CORE (A "Alma" do projeto)
+│   ├── mc_core.c     # AudioCallback, estado global e mixer principal
+│   ├── mc_midi.c     # Ponte MIDI (FluidSynth e Arquivos .mid)
+│   ├── mc_mml.c      # Sequenciador Music Macro Language
+│   └── mc_presets.c  # Banco de timbres pré-programados
+├── include/
+│   ├── monocordio.h  # API Pública Completa
+│   ├── mc_presets.h  # API de Timbres (Patches)
+│   └── mc_internal.h # Contratos internos dos módulos
+└── Makefile          # Automação de Build do projeto
 ```
 
 ## 🎯 Conceitos Chave
 
-1.  **Canais:** 8 canais de polifonia simultânea.
-2.  **Formas de Onda:** Quadrada, Triangular, Dente de Serra, Senoidal e Ruído (LFSR 16-bit).
-3.  **Patches:** Estruturas de dados que definem o timbre (Envelope ADSR, Onda, VFO).
-4.  **Hardware Agnostic:** O código do usuário (Hardy) não toca na SDL2 diretamente, usando as funções wrapper `MC_`.
+1.  **Canais:** 8 canais de polifonia simultânea para synth 8-bit + 16 canais MIDI externos.
+2.  **Formas de Onda:** Quadrada, Triangular, Dente de Serra, Senoidal e Ruído (LFSR).
+3.  **Patches:** Módulos que definem o timbre (Envelope ADSR, Onda, VFO, LFO Vibrato).
+4.  **Hardware Agnostic:** O código do usuário (Hardy) não toca na SDL2 nem no FluidSynth diretamente, tudo é abstraído pelas funções `MC_`.
+5.  **Arquitetura Híbrida:** Mistura o Mundo 1 (Synth 8-Bits), Mundo 2 (MIDI via SoundFont) e Mundo 3 (Player de Arquivos `.mid`).
+
 
 ---
 

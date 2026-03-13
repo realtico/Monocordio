@@ -16,7 +16,6 @@ int main(int argc, char* argv[]) {
     MC_Patch melody_patch = {
         .wave = MC_WAVE_SQUARE,
         .duty_cycle = 0.5f,
-        .total_duration = 0.0f, // MML controla a duração
         .adsr = { .attack = 0.02f, .decay = 0.1f, .sustain = 0.8f, .release = 0.1f },
         .vfo = { 0 },
         .volume = 0.5f
@@ -26,7 +25,6 @@ int main(int argc, char* argv[]) {
     MC_Patch bass_patch = {
         .wave = MC_WAVE_TRIANGLE,
         .duty_cycle = 0.5f,
-        .total_duration = 0.0f,
         .adsr = { .attack = 0.05f, .decay = 0.2f, .sustain = 0.6f, .release = 0.2f },
         .vfo = { 0 },
         .volume = 0.6f

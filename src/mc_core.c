@@ -2,11 +2,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <sys/wait.h>
-#include <errno.h>
 
 // ============================================================================
 // GLOBAL STATE DEFINITIONS
@@ -16,18 +11,18 @@ struct MC_Channel channels[MC_CHANNELS_COUNT];
 SDL_AudioDeviceID audio_device;
 float master_volume = 0.3f; 
 
-// IPC Globals (Defined here)
-int mc_pipe_fd[2] = {-1, -1};
-pid_t mc_player_pid = -1;
-bool mc_ipc_active = false;
+// IPC Globals (REMOVED - Using fluid_player)
+// bool mc_ipc_active = false; // logic moved to mc_midi.c
 
 // ============================================================================
 // INTERNAL HELPERS
 // ============================================================================
 
-// Soft Clipping (Hyperbolic Tangent)
+// Hard/Safeguard Clipping (evitando o tanhf puro que adiciona distorção harmônica a volumes normais)
 static float soft_clip(float x) {
-    return tanhf(x);
+    if (x > 1.0f) return 1.0f;
+    if (x < -1.0f) return -1.0f;
+    return x;
 }
 
 // ============================================================================
@@ -38,56 +33,9 @@ void AudioCallback(void* userdata, Uint8* stream, int len) {
     (void)userdata;
     
     // ------------------------------------------------------------------------
-    // MUNDO 3b (IPC PIPE READER)
+    // MUNDO 3b (FLUID PLAYER IS HANDLED INTERNALLY BY FLUIDSYNTH)
     // ------------------------------------------------------------------------
-    if (mc_ipc_active && mc_pipe_fd[0] != -1) {
-        // Read from pipe (non-blocking assumed or handled by O_NONBLOCK)
-        // We read chunks of 3 bytes (std midi msg) or more
-        // Simple protocol: raw bytes. MC_SendRawMidi handles status parsing state? 
-        // No, MC_SendRawMidi expects 3 bytes. We need to be careful with partial reads.
-        // For simplicity in this sprint, we assume child writes atomic 3-byte messages.
-        
-        uint8_t buffer[128]; 
-        int bytes_read;
-        
-        // Non-blocking read loop
-        while ((bytes_read = read(mc_pipe_fd[0], buffer, sizeof(buffer))) > 0) {
-           // We have a stream of bytes. We need to parse MIDI messages.
-           // Since we control the child, we can enforce 3-byte packets for NoteOn/Off/CC/PC.
-           // However, Program Change is 2 bytes. 
-           // Let's implement a simple state machine or assume aligned writes for now.
-           
-           for (int i=0; i < bytes_read; ) {
-               uint8_t status = buffer[i];
-               if (status & 0x80) {
-                   int needed = 0;
-                   if ((status & 0xF0) == 0xC0 || (status & 0xF0) == 0xD0) needed = 2; // PC or Channel Press (2 bytes)
-                   else needed = 3; // NoteOn, NoteOff, CC, PitchBend (3 bytes)
-                   
-                   if (i + needed <= bytes_read) {
-                        if (needed == 2) {
-                             MC_SendRawMidi(buffer[i], buffer[i+1], 0);
-                        } else {
-                             MC_SendRawMidi(buffer[i], buffer[i+1], buffer[i+2]);
-                        }
-                        i += needed;
-                   } else {
-                       // Partial packet at end of buffer?
-                       // Since we read in chunks, and pipe writes are likely atomic for small sizes,
-                       // this misalignment implies we read a partial stream or our logic is flawed.
-                       // For safety, we should probably save this residual for next time.
-                       // But for this sprint, let's just break and hope alignment holds.
-                       // Printing error might be useful for debugging.
-                       // fprintf(stderr, "Midi partial!\n"); 
-                       break; 
-                   }
-               } else {
-                   // Running status or garbage? Skip.
-                   i++;
-               }
-           }
-        }
-    }
+    // I/O removed from callback to prevent dropouts and race conditions.
 
     float* buffer = (float*)stream;
     int samples = len / sizeof(float);
@@ -142,7 +90,11 @@ void AudioCallback(void* userdata, Uint8* stream, int len) {
                     break;
                 
                 case MC_WAVE_SQUARE:
-                    sample_val = (sin(ch->phase) >= 0.0) ? 1.0f : -1.0f;
+                    {
+                        double norm = ch->phase / (2.0 * M_PI);
+                        norm -= (int)norm; // normalize 0..1
+                        sample_val = (norm < ch->patch.duty_cycle) ? 1.0f : -1.0f;
+                    }
                     ch->phase += phase_incr;
                     break;
                 
@@ -231,8 +183,11 @@ void AudioCallback(void* userdata, Uint8* stream, int len) {
                         ch->adsr_stage = ADSR_IDLE;
                         ch->active = false;
                     } else {
-                        // Release formula fix based on max amplitude assumption for rate
-                        float rate = 1.0f / ch->patch.adsr.release;
+                        // Release formula fixed: decays from release_start_level
+                        float start_val = ch->release_start_level;
+                        if (start_val <= 0.0001f) start_val = 1.0f; // Safety fallback
+                        
+                        float rate = start_val / ch->patch.adsr.release;
                         ch->current_amplitude -= rate * dt;
                         
                         if (ch->current_amplitude <= 0.0f) {
@@ -249,31 +204,23 @@ void AudioCallback(void* userdata, Uint8* stream, int len) {
         }
 
         // 5. Master Output & Soft Clip
-        float final_out = sample_mix * master_volume * 1.5f; 
+        float final_out = sample_mix * master_volume * MC_INTERNAL_GAIN; 
         buffer[i] = final_out; // Will be clipped after fluid mix
     }
 
     // Mix FluidSynth Output (if enabled)
     if (fluid_enabled && fluid_synth) {
-       int frames = len / sizeof(float); // This is total floats in mono buffer
-       
-       // Using dynamic sizing just in case, but static is faster if size is known.
-       // SDL usually respects 'samples' but can vary.
-       // 2048 is safe for 1024 samples * 2 channels.
-       // However, checking bounds is safer.
-       if (frames > 1024) frames = 1024; // Clamp to our static buffer size
+       int frames = len / sizeof(float);
+       if (frames > 4096) frames = 4096;
 
-       static float fluid_buf[2048]; // Max 1024 frames * 2 channels
+       static float fluid_buf[8192]; // frames * 2 channels
        
-       // Clear fluid buffer
-       memset(fluid_buf, 0, sizeof(fluid_buf)); 
-       
-       // Render
+       // Render stereo from FluidSynth
        if (fluid_synth_write_float(fluid_synth, frames, fluid_buf, 0, 2, fluid_buf, 1, 2) == FLUID_OK) {
            for (int i = 0; i < frames; i++) {
-               // Mix stereo to mono
+               // Downmix stereo to mono, apply master volume
                float fluid_mono = (fluid_buf[i*2] + fluid_buf[i*2+1]) * 0.5f;
-               buffer[i] += fluid_mono * 2.0f; 
+               buffer[i] += fluid_mono * master_volume;
            }
        }
     }
@@ -375,6 +322,7 @@ void MC_Stop(int channel_id) {
     
     SDL_LockAudioDevice(audio_device);
     channels[channel_id].adsr_stage = ADSR_RELEASE;
+    channels[channel_id].release_start_level = channels[channel_id].current_amplitude;
     channels[channel_id].mml_active = false;
     SDL_UnlockAudioDevice(audio_device);
 }

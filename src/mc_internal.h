@@ -12,6 +12,12 @@
 #endif
 
 // ============================================================================
+// CONSTANTS (GAINS)
+// ============================================================================
+#define MC_INTERNAL_GAIN 0.6f  // Ganho da engine 8-bit (baixado de 1.5 para equilibrar com o MIDI)
+#define MC_FLUID_GAIN    0.6f  // Gain interno do FluidSynth (aumentado de 0.2 para maior presença)
+
+// ============================================================================
 // INTERNAL STRUCTURES
 // ============================================================================
 
@@ -35,6 +41,7 @@ struct MC_Channel {
     float vfo_timer;     // Timer independente para VFO
     double vibrato_phase;// Fase do LFO para Vibrato
     float volume;        // Volume do canal
+    float release_start_level; // Amplitude no inicio do release
 
     /* Modo de Operação (Mundo 1 vs Mundo 2) */
     MC_ChannelMode mode; 
@@ -63,11 +70,6 @@ extern fluid_settings_t* fluid_settings;
 extern fluid_synth_t* fluid_synth;
 extern bool fluid_enabled;
 
-// IPC State (Mundo 3b)
-extern int mc_pipe_fd[2]; // Pipe para comunicação Pai-Filho
-extern pid_t mc_player_pid; // PID do processo player
-extern bool mc_ipc_active;
-
 // ============================================================================
 // INTERNAL FUNCTION PROTOTYPES
 // ============================================================================
@@ -78,8 +80,5 @@ void MC_Internal_CleanupFluidSynth(void);
 
 // mc_mml.c
 void MC_Internal_ProcessMML(struct MC_Channel* channel);
-
-// mc_synth.c
-float MC_Internal_GetNoteFreq(int note_index, int octave);
 
 #endif // MC_INTERNAL_H

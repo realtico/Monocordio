@@ -36,7 +36,6 @@ typedef struct {
     MC_Waveform wave;
     MC_ADSR adsr;
     MC_VFO vfo;
-    float total_duration;
     float duty_cycle; // Relevante para SQUARE
     float vibrato_depth; // Amplitude do Vibrato (Hz)
     float vibrato_rate;  // Frequência do Vibrato (Hz)
@@ -76,6 +75,7 @@ void MC_MidiAllNotesOff(void); // Panic Button
 
 /* IPC / Player (Mundo 3b) */
 void MC_PlayMidiFile(const char* filename);
+void MC_StopMidiFile(void);
 
 void MC_PlayMML(int channel_id, const MC_Patch* patch, const char* mml_string);
 void MC_Stop(int channel_id);

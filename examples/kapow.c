@@ -17,7 +17,6 @@ int main(int argc, char* argv[]) {
     MC_Patch noise_layer = {
         .wave = MC_WAVE_NOISE_LFSR,
         .duty_cycle = 0.5f,
-        .total_duration = 2.0f,
         .adsr = { .attack = 0.0f, .decay = 1.0f, .sustain = 0.0f, .release = 0.0f },
         .vfo = { 0 },
         .volume = 0.8f
@@ -27,7 +26,6 @@ int main(int argc, char* argv[]) {
     MC_Patch body_layer = {
         .wave = MC_WAVE_SQUARE,
         .duty_cycle = 0.5f,
-        .total_duration = 0.5f,
         .adsr = { .attack = 0.0f, .decay = 0.2f, .sustain = 0.0f, .release = 0.0f },
         .vfo = { 0 },
         .volume = 0.9f
@@ -37,7 +35,6 @@ int main(int argc, char* argv[]) {
     MC_Patch alert_patch = {
         .wave = MC_WAVE_SINE,
         .duty_cycle = 0.5f,
-        .total_duration = 3.0f,
         .adsr = { .attack = 0.1f, .decay = 0.0f, .sustain = 0.6f, .release = 0.5f },
         .vfo = { 0 },
         .volume = 0.5f
