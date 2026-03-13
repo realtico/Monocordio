@@ -30,9 +30,7 @@ int main() {
 
     // Definindo Patches
     // Canal 0: O icônico Órgão
-    // MC_Play(0, &MC_PATCH_ORGAN, 0); 
     // Canal 1: Baixo de suporte
-    // MC_Play(1, &MC_PATCH_BASS, 0);
 
     // Frase 1: Taaaaaaan...
     printf("Phrase 1: The Phantom...\n");

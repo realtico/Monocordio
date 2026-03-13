@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef MC_MIDI_ENABLED
+
 // ============================================================================
 // GLOBAL STATE (Defined in mc_core.c, declared extern in mc_internal.h)
 // ============================================================================
@@ -96,6 +98,68 @@ void MC_SendRawMidi(uint8_t status, uint8_t data1, uint8_t data2) {
 }
 
 // ============================================================================
+// MIDI FILE PLAYER
+// ============================================================================
+
+void MC_StopMidiFile(void) {
+    if (fluid_player) {
+        fluid_player_stop(fluid_player);
+        delete_fluid_player(fluid_player);
+        fluid_player = NULL; 
+    }
+}
+
+void MC_PlayMidiFile(const char* filename) {
+    if (!fluid_enabled || !fluid_synth) return;
+
+    // Stop previous playback and destroy old player
+    MC_StopMidiFile();
+
+    // Create new player
+    fluid_player = new_fluid_player(fluid_synth);
+    if (!fluid_player) {
+         fprintf(stderr, "[Monocordio] Failed to create fluid_player\n");
+         return;
+    }
+
+    if (fluid_player_add(fluid_player, filename) == FLUID_OK) {
+        fluid_player_play(fluid_player);
+    } else {
+        fprintf(stderr, "[Monocordio] Failed to load MIDI file: %s\n", filename);
+        // Clean up
+        delete_fluid_player(fluid_player);
+        fluid_player = NULL;
+    }
+}
+
+bool MC_IsMidiPlaying(void) {
+    if (!fluid_player) return false;
+    return (fluid_player_get_status(fluid_player) == FLUID_PLAYER_PLAYING);
+}
+
+void MC_SendSysEx(const uint8_t* data, int length) {
+    (void)data; (void)length;
+}
+
+#else // MC_MIDI_ENABLED
+
+// Stubs for build without MIDI support
+bool MC_Internal_InitFluidSynth(void) { return false; }
+void MC_Internal_CleanupFluidSynth(void) {}
+
+void MC_SendRawMidi(uint8_t status, uint8_t data1, uint8_t data2) { (void)status; (void)data1; (void)data2; }
+void MC_SendSysEx(const uint8_t* data, int length) { (void)data; (void)length; }
+
+void MC_PlayMidiFile(const char* filename) {
+    fprintf(stderr, "[Monocordio] MIDI support disabled in build.\n");
+    (void)filename;
+}
+void MC_StopMidiFile(void) {}
+bool MC_IsMidiPlaying(void) { return false; }
+
+#endif // MC_MIDI_ENABLED
+
+// ============================================================================
 // MIDI CONVENIENCE API (Sprint 09)
 // ============================================================================
 
@@ -161,47 +225,3 @@ void MC_MidiSetReverb(int channel, int level) {
     MC_MidiControlChange(channel, 91, level); // CC 91 = Reverb Send
 }
 
-// ============================================================================
-// MIDI FILE PLAYER
-// ============================================================================
-
-void MC_StopMidiFile(void) {
-    if (fluid_player) {
-        fluid_player_stop(fluid_player);
-        // Note: fluid_player_join might block if not running in a thread or if stopped?
-        // fluid_player_stop ensures it stops processing.
-        // We can just leave it stopped.
-        // Or destroy it to reset playlist.
-        delete_fluid_player(fluid_player);
-        fluid_player = NULL;
-    }
-}
-
-void MC_PlayMidiFile(const char* filename) {
-    if (!fluid_enabled || !fluid_synth) return;
-
-    // Stop previous playback
-    MC_StopMidiFile();
-
-    // Create new player
-    fluid_player = new_fluid_player(fluid_synth);
-    if (!fluid_player) {
-         fprintf(stderr, "[Monocordio] Failed to create fluid_player\n");
-         return;
-    }
-
-    if (fluid_player_add(fluid_player, filename) == FLUID_OK) {
-        fluid_player_play(fluid_player);
-    } else {
-        fprintf(stderr, "[Monocordio] Failed to load MIDI file: %s\n", filename);
-        // Clean up
-        delete_fluid_player(fluid_player);
-        fluid_player = NULL;
-    }
-}
-
-void MC_SendSysEx(const uint8_t* data, int length) {
-    // Stub: Optional SysEx support for later
-    (void)data;
-    (void)length;
-}

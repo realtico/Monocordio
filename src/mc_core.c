@@ -11,9 +11,6 @@ struct MC_Channel channels[MC_CHANNELS_COUNT];
 SDL_AudioDeviceID audio_device;
 float master_volume = 0.3f; 
 
-// IPC Globals (REMOVED - Using fluid_player)
-// bool mc_ipc_active = false; // logic moved to mc_midi.c
-
 // ============================================================================
 // INTERNAL HELPERS
 // ============================================================================
@@ -59,148 +56,11 @@ void AudioCallback(void* userdata, Uint8* stream, int len) {
 
             if (!ch->active && ch->adsr_stage == ADSR_IDLE) continue;
 
-            // 1. Calculate Frequency (VFO)
-            float current_freq = ch->frequency;
-            if (ch->patch.vfo.duration > 0.0f) {
-                float vfo_progress = ch->vfo_timer / ch->patch.vfo.duration;
-                if (vfo_progress > 1.0f) vfo_progress = 1.0f;
-                
-                float offset = ch->patch.vfo.start_offset_hz + 
-                               (ch->patch.vfo.end_offset_hz - ch->patch.vfo.start_offset_hz) * vfo_progress;
-                current_freq += offset;
-                ch->vfo_timer += 1.0f / MC_SAMPLE_RATE;
-            }
-
-            // 1b. Calculate Vibrato (LFO)
-            if (ch->patch.vibrato_rate > 0.0f && ch->patch.vibrato_depth > 0.0f) {
-                float lfo_val = sin(ch->vibrato_phase);
-                current_freq += lfo_val * ch->patch.vibrato_depth;
-                ch->vibrato_phase += (ch->patch.vibrato_rate * 2.0 * M_PI) / MC_SAMPLE_RATE;
-                if (ch->vibrato_phase >= 2.0 * M_PI) ch->vibrato_phase -= 2.0 * M_PI;
-            }
-
-            // 2. Generate Waveform
-            float sample_val = 0.0f;
-            double phase_incr = (current_freq * 2.0 * M_PI) / MC_SAMPLE_RATE;
+            // Process the channel (Generates one sample with all effects/envelopes)
+            float sample_val = MC_Internal_GenerateSample(ch);
             
-            switch (ch->patch.wave) {
-                case MC_WAVE_SINE:
-                    sample_val = sin(ch->phase);
-                    ch->phase += phase_incr;
-                    break;
-                
-                case MC_WAVE_SQUARE:
-                    {
-                        double norm = ch->phase / (2.0 * M_PI);
-                        norm -= (int)norm; // normalize 0..1
-                        sample_val = (norm < ch->patch.duty_cycle) ? 1.0f : -1.0f;
-                    }
-                    ch->phase += phase_incr;
-                    break;
-                
-                case MC_WAVE_SAWTOOTH:
-                    {
-                        double norm_phase = ch->phase / (2.0 * M_PI);
-                        norm_phase -= (int)norm_phase;
-                        sample_val = 2.0f * (float)norm_phase - 1.0f;
-                    }
-                    ch->phase += phase_incr;
-                    break;
-
-                case MC_WAVE_TRIANGLE:
-                     {
-                        double norm_phase = ch->phase / (2.0 * M_PI);
-                        norm_phase -= (int)norm_phase;
-                        if (norm_phase < 0.5) 
-                            sample_val = 4.0f * (float)norm_phase - 1.0f;
-                        else 
-                            sample_val = 3.0f - 4.0f * (float)norm_phase;
-                     }
-                     ch->phase += phase_incr;
-                     break;
-
-                case MC_WAVE_NOISE_LFSR:
-                    // Improved Noise: Clocked by Frequency
-                    if (ch->phase >= 2.0 * M_PI) {
-                        uint8_t lsb = ch->lfsr_reg & 1;
-                        ch->lfsr_reg >>= 1;
-                        if (lsb) ch->lfsr_reg ^= 0xB400u; // Tap
-                        ch->phase -= 2.0 * M_PI;
-                    }
-                    sample_val = (ch->lfsr_reg & 1) ? 0.5f : -0.5f; 
-                    ch->phase += phase_incr; 
-                    break;
-            }
-
-            // Keep Phase in bounds for non-noise
-            if (ch->patch.wave != MC_WAVE_NOISE_LFSR) {
-                if (ch->phase >= 2.0 * M_PI) ch->phase -= 2.0 * M_PI;
-            }
-
-            // 3. ADSR Envelope
-            float dt = 1.0f / MC_SAMPLE_RATE;
-            ch->stage_timer += dt;
-
-            switch (ch->adsr_stage) {
-                case ADSR_ATTACK:
-                    if (ch->patch.adsr.attack <= 0.001f) {
-                        ch->current_amplitude = 1.0f;
-                        ch->adsr_stage = ADSR_DECAY;
-                        ch->stage_timer = 0.0f;
-                    } else {
-                         float step = 1.0f / ch->patch.adsr.attack;
-                         ch->current_amplitude += step * dt;
-                         if (ch->current_amplitude >= 1.0f) {
-                             ch->current_amplitude = 1.0f;
-                             ch->adsr_stage = ADSR_DECAY;
-                             ch->stage_timer = 0.0f;
-                         }
-                    }
-                    break;
-
-                case ADSR_DECAY:
-                     if (ch->patch.adsr.decay <= 0.001f || ch->patch.adsr.sustain >= 1.0f) {
-                        ch->current_amplitude = ch->patch.adsr.sustain;
-                        ch->adsr_stage = ADSR_SUSTAIN;
-                     } else {
-                        float range = 1.0f - ch->patch.adsr.sustain;
-                        float step = range / ch->patch.adsr.decay;
-                        ch->current_amplitude -= step * dt;
-                        if (ch->current_amplitude <= ch->patch.adsr.sustain) {
-                            ch->current_amplitude = ch->patch.adsr.sustain;
-                            ch->adsr_stage = ADSR_SUSTAIN;
-                        }
-                     }
-                    break;
-
-                case ADSR_SUSTAIN:
-                    ch->current_amplitude = ch->patch.adsr.sustain;
-                    break;
-
-                case ADSR_RELEASE:
-                    if (ch->patch.adsr.release <= 0.001f) {
-                        ch->current_amplitude = 0.0f;
-                        ch->adsr_stage = ADSR_IDLE;
-                        ch->active = false;
-                    } else {
-                        // Release formula fixed: decays from release_start_level
-                        float start_val = ch->release_start_level;
-                        if (start_val <= 0.0001f) start_val = 1.0f; // Safety fallback
-                        
-                        float rate = start_val / ch->patch.adsr.release;
-                        ch->current_amplitude -= rate * dt;
-                        
-                        if (ch->current_amplitude <= 0.0f) {
-                            ch->current_amplitude = 0.0f;
-                            ch->adsr_stage = ADSR_IDLE;
-                            ch->active = false;
-                        }
-                    }
-                    break;
-            }
-
-            // 4. Mix
-            sample_mix += sample_val * ch->current_amplitude * ch->volume * ch->patch.volume;
+            // Mix
+            sample_mix += sample_val; 
         }
 
         // 5. Master Output & Soft Clip
@@ -208,6 +68,7 @@ void AudioCallback(void* userdata, Uint8* stream, int len) {
         buffer[i] = final_out; // Will be clipped after fluid mix
     }
 
+#ifdef MC_MIDI_ENABLED
     // Mix FluidSynth Output (if enabled)
     if (fluid_enabled && fluid_synth) {
        int frames = len / sizeof(float);
@@ -224,6 +85,7 @@ void AudioCallback(void* userdata, Uint8* stream, int len) {
            }
        }
     }
+#endif
 
 
     // Final Soft Clip Check
@@ -239,10 +101,12 @@ void AudioCallback(void* userdata, Uint8* stream, int len) {
 bool MC_Init(void) {
     if (SDL_Init(SDL_INIT_AUDIO) < 0) return false;
 
+#ifdef MC_MIDI_ENABLED
     // FluidSynth Initialization
     if (!MC_Internal_InitFluidSynth()) {
         fprintf(stderr, "[Monocordio] Warning: FluidSynth failed. Continuing in 8-bit only mode.\n");
     }
+#endif
 
     srand(time(NULL)); 
 
@@ -275,7 +139,9 @@ bool MC_Init(void) {
 void MC_Cleanup(void) {
     SDL_PauseAudioDevice(audio_device, 1);
     SDL_CloseAudioDevice(audio_device);
+#ifdef MC_MIDI_ENABLED
     MC_Internal_CleanupFluidSynth();
+#endif
     SDL_Quit();
 }
 
@@ -313,6 +179,7 @@ void MC_Play(int channel_id, const MC_Patch* patch, float base_freq) {
     ch->current_amplitude = 0.0f;
     ch->vfo_timer = 0.0f;
     ch->lfsr_reg = (rand() % 0xFFFF) ^ 0xACE1u;
+    if (ch->lfsr_reg == 0) ch->lfsr_reg = 1; // Prevent lock-up
 
     SDL_UnlockAudioDevice(audio_device);
 }

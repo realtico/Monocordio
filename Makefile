@@ -1,7 +1,16 @@
 CC = gcc
+
+# Configuração de Build (MIDI=1 por padrão)
+MIDI ?= 1
+
 # Flags de compilação
-FLUID_CFLAGS = $(shell pkg-config --cflags fluidsynth)
-FLUID_LIBS = $(shell pkg-config --libs fluidsynth)
+ifeq ($(MIDI), 1)
+    FLUID_CFLAGS = $(shell pkg-config --cflags fluidsynth) -DMC_MIDI_ENABLED
+    FLUID_LIBS = $(shell pkg-config --libs fluidsynth)
+else
+    FLUID_CFLAGS =
+    FLUID_LIBS =
+endif
 
 CFLAGS = -Wall -Wextra -g -I$(INC_DIR) -fPIC $(FLUID_CFLAGS)
 LIBS = -lSDL2 -lm $(FLUID_LIBS)

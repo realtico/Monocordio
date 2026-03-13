@@ -3,7 +3,11 @@
 
 #include "monocordio.h"
 #include <SDL2/SDL.h>
+
+#ifdef MC_MIDI_ENABLED
 #include <fluidsynth.h>
+#endif
+
 #include <stdbool.h>
 #include <math.h>
 
@@ -66,17 +70,24 @@ extern SDL_AudioDeviceID audio_device;
 extern float master_volume;
 
 // FluidSynth State
+#ifdef MC_MIDI_ENABLED
 extern fluid_settings_t* fluid_settings;
 extern fluid_synth_t* fluid_synth;
 extern bool fluid_enabled;
+extern fluid_player_t* fluid_player; // Needs to be extern for mc_midi.c to use
+#endif
 
 // ============================================================================
 // INTERNAL FUNCTION PROTOTYPES
 // ============================================================================
 
+float MC_Internal_GenerateSample(struct MC_Channel* ch);
+
+#ifdef MC_MIDI_ENABLED
 // mc_midi.c
 bool MC_Internal_InitFluidSynth(void);
 void MC_Internal_CleanupFluidSynth(void);
+#endif
 
 // mc_mml.c
 void MC_Internal_ProcessMML(struct MC_Channel* channel);

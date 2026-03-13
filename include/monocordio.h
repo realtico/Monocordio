@@ -76,6 +76,7 @@ void MC_MidiAllNotesOff(void); // Panic Button
 /* IPC / Player (Mundo 3b) */
 void MC_PlayMidiFile(const char* filename);
 void MC_StopMidiFile(void);
+bool MC_IsMidiPlaying(void);
 
 void MC_PlayMML(int channel_id, const MC_Patch* patch, const char* mml_string);
 void MC_Stop(int channel_id);
