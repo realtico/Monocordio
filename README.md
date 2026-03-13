@@ -94,4 +94,4 @@ A arquitetura foi desenhada para desacoplar o Core da Aplicação.
 
 ---
 
-*Desenvolvido pelo Polux (Dev Sênior), sob a arquitetura do Castor e visão do Hardy.*
+*Desenvolvido pelo Polux (Dev Sênior - Gemini 3), sob a arquitetura do Castor (Gemini 3 Pro), revisão do Cláudio (Claude Opus 4.6) e visão do Hardy (Product Owner, Lider Técnico e humano nas horas vagas).*
